@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Aju</title>
+
+    <!-- Include jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    <!-- Include DataTables CSS and JS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+</head>
+<body>
+
+    <h2>Form AJU</h2>
+
+    <form id="statusForm">
+        <label for="statusId">NO.Aju</label>
+        <input type="text" id="statusId" name="statusId" required>
+        <br>
+
+        <button type="button" onclick="getStatus()">Get Status</button>
+    </form>
+
+    <!-- Tabel untuk menampilkan data menggunakan DataTables -->
+    <table id="statusTable" class="display">
+        <thead>
+            <tr>
+                <th>Nomor Aju</th>
+                <th>Nomor Daftar</th>
+                <th>Tanggal Daftar</th>
+                <th>Kode Proses</th>
+                <th>Waktu Status</th>
+                <th>Keterangan</th>
+                <th>Kode Dokumen</th>
+                <th>Action</th> <!-- Tambah kolom untuk aksi -->
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data akan ditambahkan di sini menggunakan JavaScript -->
+        </tbody>
+    </table>
+
+    <!-- Elemen untuk menampilkan link download PDF -->
+    <div id="downloadPdfContainer">
+        <a id="downloadPdfLink" href="#" download>Download PDF</a>
+    </div>
+
+    <script>
+        // Fungsi untuk mengisi tabel DataTables dengan data
+        function populateDataTable(dataStatus, dataRespon) {
+            // Gabungkan dataStatus dan dataRespon menjadi satu array
+            var combinedData = dataStatus.concat(dataRespon);
+
+            $('#statusTable').DataTable({
+                data: combinedData,
+                columns: [
+                    { data: 'nomorAju' },
+                    { data: 'nomorDaftar' },
+                    { data: 'tanggalDaftar' },
+                    { data: 'kodeProses' },
+                    { data: 'waktuStatus' },
+                    { data: 'keterangan' },
+                    { data: 'kodeDokumen' },
+                    {
+                        // Kolom untuk menampilkan tombol Download PDF
+                        data: null,
+                        render: function (data, type, row) {
+                            return '<button onclick="downloadPdf(\'' + row.pdf + '\')">Download</button>';
+                        }
+                    }
+                ]
+            });
+        }
+
+        // Fungsi untuk menangani klik tombol Download PDF
+        function downloadPdf(pdfPath) {
+            // Bangun URL endpoint download PDF dengan menambahkan access_token
+            var downloadUrl = 'http://localhost/project-dowloader-beacukai/proxy.php?path=' + encodeURIComponent(pdfPath);
+
+            // Set href link download PDF
+            $('#downloadPdfLink').attr('href', downloadUrl);
+        }
+
+        function getCookie(name) {
+            var value = "; " + document.cookie;
+            var parts = value.split("; " + name + "=");
+            if (parts.length == 2) return parts.pop().split(";").shift();
+        }
+
+        // Fungsi untuk membuat permintaan AJAX ke status.php dengan statusId tertentu
+        function fetchDataFromServer(statusId) {
+            $.ajax({
+                url: 'status.php',
+                type: 'GET',
+                data: { statusId: statusId },
+                dataType: 'json',
+                success: function (response) {
+                    // Cek apakah respons memiliki dataStatus dan dataRespon
+                    if (response.dataStatus && response.dataRespon) {
+                        // Panggil fungsi untuk mengisi tabel dengan dataStatus dan dataRespon
+                        populateDataTable(response.dataStatus, response.dataRespon);
+
+                        // Munculkan elemen downloadPdfContainer
+                        $('#downloadPdfContainer').show();
+                    } else {
+                        console.error('DataStatus or DataRespon not found in the response.');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error fetching data from server:', error);
+                }
+            });
+        }
+
+        // Fungsi yang dipanggil saat tombol diklik
+        function getStatus() {
+            var statusId = document.getElementById("statusId").value;
+
+            // Panggil fungsi untuk mengambil data dengan ID yang diinputkan
+            fetchDataFromServer(statusId);
+        }
+
+        // Panggil fungsi untuk mengambil data saat dokumen siap
+        $(document).ready(function () {
+            // Sembunyikan elemen downloadPdfContainer saat halaman dimuat
+            $('#downloadPdfContainer').hide();
+        });
+    </script>
+
+</body>
+</html>
